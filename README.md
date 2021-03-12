@@ -1,6 +1,4 @@
 # CodeSamples
-Various little code samples of my work
-
 This repo contains code samples of my work from various professional and personal projects.
 
 # HFN Projects
