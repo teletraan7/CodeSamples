@@ -27,10 +27,9 @@ public:
 	void MoveHorizontal(float value);
 	void Interact();
 	void Attack();
-	void PickupItem(AInteractableActorBase* ItemBeingPickUp);
-	UItemHolderComponent* GetItemHolder() const
+	AMainPlayerController* GetPlayerCon() const 
 	{
-		return ItemBag;
+		return PlayerCon;
 	}
 
 protected:
@@ -54,8 +53,6 @@ protected:
 	UCameraComponent* CameraComp;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = true))
 	USpringArmComponent* SpringComp;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = true))
-	UItemHolderComponent* ItemBag;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Animations", meta = (AllowPrivateAccess = true))
 	UPaperFlipbook* IdleAnimation;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Animations", meta = (AllowPrivateAccess = true))
@@ -69,6 +66,7 @@ protected:
 
 	FVector MovementDirection{0,0,0};
 	FVector2D MovementValues{0,0};
+	AMainPlayerController* PlayerCon;
 	
 	UFUNCTION()
     virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
@@ -88,6 +86,10 @@ protected:
 	UFUNCTION(Server, Unreliable)
 	void UpdateAnimation();
 	void UpdateAnimation_Implementation();
+	UFUNCTION(Server, WithValidation, Reliable)
+	void Server_PickUp();
+	bool Server_PickUp_Validate();
+	void Server_PickUp_Implementation();
 	
 	UFUNCTION()
     void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

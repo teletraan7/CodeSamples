@@ -24,13 +24,13 @@ APlayerCharacter::APlayerCharacter()
 	CameraComp->SetupAttachment(SpringComp);
 	BagMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Item Bag Mesh"));
 	BagMesh->SetupAttachment(SpriteComp);
-	ItemBag = CreateDefaultSubobject<UItemHolderComponent>(TEXT("Item Holder"));
 }
 
 // Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	PlayerCon = Cast<AMainPlayerController>(GetWorld()->GetFirstPlayerController());
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnOverlapBegin);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &APlayerCharacter::OnOverlapEnd);
 }
@@ -160,20 +160,32 @@ void APlayerCharacter::FlipSprite_Implementation(float InputValue)
 void APlayerCharacter::Interact()
 {
 	UE_LOG(LogTemp, Warning, TEXT("INTERACT BUTTON PRESSED"));
-	if (StolenItemsNearPawn.Num() > 0) PickupItem(StolenItemsNearPawn.Last());
+	if (StolenItemsNearPawn.Num() > 0) Server_PickUp();
 	else if (StolenItemsNearPawn.Num() <= 0 && NearbySecurityObject != nullptr) NearbySecurityObject->HackSecurityBarrier(this);
 	else UE_LOG(LogTemp, Error, TEXT("NO VALID PLAYER INTERACTION AVAILABLE"));
+}
+
+bool APlayerCharacter::Server_PickUp_Validate()
+{
+	if (HasAuthority()) 
+	{
+		if (StolenItemsNearPawn.Num() <= 0) return false;
+	}
+	UE_LOG(LogTemp, Error, TEXT("PICKUP VALIDATION PASSED"));
+	return true;
+}
+
+void APlayerCharacter::Server_PickUp_Implementation()
+{
+	if (HasAuthority())
+	{
+		//PlayerCon->PickUpItem(StolenItemsNearPawn.Last());
+		UE_LOG(LogTemp, Error, TEXT("SERVER PICKUP ITEM IMPLEMENTED"));
+	}
 }
 
 void APlayerCharacter::Attack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player Attack"));
-}
-
-void APlayerCharacter::PickupItem(AInteractableActorBase* ItemBeingPickUp)
-{
-	UE_LOG(LogTemp, Warning, TEXT("PLAYER ASKED TO PICK UP ITEM"));
-	ItemBag->ServerAddItem(ItemBeingPickUp);
-	StoreNearbyObject(ItemBeingPickUp, false);
 }
 #pragma endregion

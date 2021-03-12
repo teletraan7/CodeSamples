@@ -2,9 +2,7 @@
 
 
 #include "MainPlayerController.h"
-#include "Pawns/PawnPlayer.h"
 
-#pragma region INPUT METHODS
 AMainPlayerController::AMainPlayerController()
 {
 	ItemHolderComp = CreateDefaultSubobject<UItemHolderComponent>(TEXT("Item Holder"));	
@@ -35,6 +33,14 @@ void AMainPlayerController::SetPlayerEnabledState(bool SetPlayerEnabled)
     SetShowMouseCursor(bShowMouseCursor);
 }
 
+void AMainPlayerController::PickUpItem(AInteractableActorBase* ItemBeingPickUp)
+{
+    //ASK THE SERVER TO PICK UP THE ITEM, AND IF SO THEN REPLICATE THE SERVERS VERSION OF THE ITEM HOLDER COMP TO THIS LOCAL CLIENT
+    UE_LOG(LogTemp, Warning, TEXT("PLAYER CONTROLLER ASKED TO PICK UP ITEM."));
+    ItemHolderComp->ServerAddItem(ItemBeingPickUp);
+}
+
+#pragma region INPUT METHODS
 void AMainPlayerController::HandleAttackInput()
 {
     if (PCharacter) PCharacter->Attack();

@@ -25,6 +25,7 @@ public:
 	AMainPlayerController();
 	virtual void SetupInputComponent() override;
 	void SetPlayerEnabledState(bool SetPlayerEnabled);
+	void PickUpItem(AInteractableActorBase* ItemBeingPickUp);
 	FPlayerHackingStart HackPressed;
 	FPlayerHackingEnd HackReleased;
 private:
