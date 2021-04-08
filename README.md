@@ -5,6 +5,7 @@ This repo contains code samples of my work from various professional and persona
 
 EngagingCongress & CitizIN are applications I worked on while working at Half Full Nelson. 
 Each was released on mobile and WebGL based platforms and where developed using the Unity engine and C#.
+It is only snippets of what I worked on, and does not represent the entirety of my work on the team.
 
 # Songbird
 
