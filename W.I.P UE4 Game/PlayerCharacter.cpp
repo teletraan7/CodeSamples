@@ -1,4 +1,4 @@
-// Copyright @2020 Jonathon Neal
+// Copyright @2021 Jonathon Neal
 
 
 #include "PlayerCharacter.h"
@@ -30,6 +30,7 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	//NOTE: This may need to be changed later. I think that currently every proxy character spawned in the server is getting the first player controller, and not the one they should use.
 	PlayerCon = Cast<AMainPlayerController>(GetWorld()->GetFirstPlayerController());
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnOverlapBegin);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &APlayerCharacter::OnOverlapEnd);
@@ -42,6 +43,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	InputComponent->BindAxis("Horizontal Movement", this, &APlayerCharacter::MoveHorizontal);
 	InputComponent->BindAxis("Vertical Movement", this, &APlayerCharacter::MoveVertical);
 	InputComponent->BindAction("Interact", IE_Pressed , this, &APlayerCharacter::Interact);
+	InputComponent->BindAction("Attack", IE_Pressed , this, &APlayerCharacter::Attack);
 }
 
 void APlayerCharacter::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
@@ -74,27 +76,22 @@ void APlayerCharacter::OnRep_IsPlayerIdle()
 #pragma region DELEGATES
 void APlayerCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(!bIsActorInteractable(OtherActor)) return;
 	AInteractableActorBase* InteractableActor = Cast<AInteractableActorBase>(OtherActor);
-	if (InteractableActor->GameplayTags.HasTag(StealableTag)) StoreNearbyObject(InteractableActor, true);
-	else if (InteractableActor->GameplayTags.HasTag(SecurityTag)) StoreSecurityRef(InteractableActor);
+	if (InteractableActor == nullptr) return;
+	if (InteractableActor->InteractionType == EInteractionType::Stealable) StoreNearbyObject(InteractableActor, true);
+	else if (InteractableActor->InteractionType == EInteractionType::Security) StoreSecurityRef(InteractableActor);
 }
 
 void APlayerCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (!bIsActorInteractable(OtherActor)) return;
 	AInteractableActorBase* InteractableActor = Cast<AInteractableActorBase>(OtherActor);
-	if (InteractableActor->GameplayTags.HasTag(StealableTag)) StoreNearbyObject(InteractableActor, false);
-	else if (InteractableActor->GameplayTags.HasTag(SecurityTag)) StoreSecurityRef(InteractableActor);
+	if (InteractableActor == nullptr) return;
+	if (InteractableActor->InteractionType == EInteractionType::Stealable) StoreNearbyObject(InteractableActor, false);
+	else if (InteractableActor->InteractionType == EInteractionType::Security) StoreSecurityRef(InteractableActor);
 }
 #pragma endregion 
 
 #pragma region HELPER METHODS
-bool APlayerCharacter::bIsActorInteractable(AActor* ActorInQuestion)
-{
-	return ActorInQuestion->ActorHasTag("Interactable");
-}
-
 void APlayerCharacter::StoreSecurityRef(AInteractableActorBase* SecurityObj)
 {
 	if (NearbySecurityObject == nullptr) NearbySecurityObject = Cast<ASecurityBarrierBase>(SecurityObj);
@@ -160,32 +157,15 @@ void APlayerCharacter::FlipSprite_Implementation(float InputValue)
 void APlayerCharacter::Interact()
 {
 	UE_LOG(LogTemp, Warning, TEXT("INTERACT BUTTON PRESSED"));
-	if (StolenItemsNearPawn.Num() > 0) Server_PickUp();
+	if (PlayerCon == nullptr) return;
+	if (StolenItemsNearPawn.Num() > 0) PlayerCon->ServerItemPickup(StolenItemsNearPawn.Last());
 	else if (StolenItemsNearPawn.Num() <= 0 && NearbySecurityObject != nullptr) NearbySecurityObject->HackSecurityBarrier(this);
 	else UE_LOG(LogTemp, Error, TEXT("NO VALID PLAYER INTERACTION AVAILABLE"));
 }
 
-bool APlayerCharacter::Server_PickUp_Validate()
-{
-	if (HasAuthority()) 
-	{
-		if (StolenItemsNearPawn.Num() <= 0) return false;
-	}
-	UE_LOG(LogTemp, Error, TEXT("PICKUP VALIDATION PASSED"));
-	return true;
-}
-
-void APlayerCharacter::Server_PickUp_Implementation()
-{
-	if (HasAuthority())
-	{
-		//PlayerCon->PickUpItem(StolenItemsNearPawn.Last());
-		UE_LOG(LogTemp, Error, TEXT("SERVER PICKUP ITEM IMPLEMENTED"));
-	}
-}
-
 void APlayerCharacter::Attack()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Player Attack"));
+	//PlayerCon->TestPickup();
+	//Server_Debug();
 }
 #pragma endregion

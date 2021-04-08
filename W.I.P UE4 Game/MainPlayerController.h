@@ -1,22 +1,24 @@
-// Copyright @2020 Jonathon Neal
+// Copyright @2021 Jonathon Neal
+/*
+JON'S NOTES: Okay so here is something to remember. If i want to access the servers version of a specific player controller I need to start the process in the PCon.
+Remember, you tried starting in the player character and learned that it would always then access the servers PCon 0. I believe it's because since you have already entered the server before calling for the PCon
+You are dgetting the PCon for the servers proxy for your character. Which would be the servers fist PCon.
+It might also be that an issue with the current way I'm getting the player controller
+*/
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "PlayerCharacter.h"
+#include "Net/UnrealNetwork.h"
 #include "MainPlayerController.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerHackingStart);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerHackingEnd);
 
-/*
-*This player controller will handle player:
-*	Team (Which team they are on, and how those interactions are handled)
-*	Chat (Are they close enough for proximity chat, or using the radio chat)
-*	States (Restrained, in a menu, visible)
-*	Menu navigation
-*/
+class AItemDropOffPoint;
+
 UCLASS()
 class DOUBLECROSS_API AMainPlayerController : public APlayerController
 {
@@ -25,14 +27,24 @@ public:
 	AMainPlayerController();
 	virtual void SetupInputComponent() override;
 	void SetPlayerEnabledState(bool SetPlayerEnabled);
-	void PickUpItem(AInteractableActorBase* ItemBeingPickUp);
+	UFUNCTION(Server, WithValidation, Reliable)
+	void ServerItemPickup(AInteractableActorBase* ItemBeingPickUp);
+	bool ServerItemPickup_Validate(AInteractableActorBase* ItemBeingPickUp);
+	void ServerItemPickup_Implementation(AInteractableActorBase* ItemBeingPickUp);
+	UFUNCTION(Server, Reliable)
+	void ServerItemDropOff(AItemDropOffPoint* DropPoint);
+	void ServerItemDropOff_Implementation(AItemDropOffPoint* DropPoint);
 	FPlayerHackingStart HackPressed;
 	FPlayerHackingEnd HackReleased;
+	UItemHolderComponent* GetItemHolder() const
+	{
+		return ItemHolderComp;
+	}
 private:
 	int PlayerTeam{0};
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=( AllowPrivateAccess = true))
 	APlayerCharacter* PCharacter;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = true))
 	UItemHolderComponent* ItemHolderComp;
 	void HandleAttackInput();
 	void HandleInteractInput();
